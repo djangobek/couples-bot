@@ -136,8 +136,8 @@ class BombRoomManager extends EventEmitter {
         return code ? this.rooms.get(code) : undefined;
     }
     /* ============================================================
-       JOIN
-       ============================================================ */
+     JOIN — idempotent, StrictMode-safe
+     ============================================================ */
     async joinRoom(params) {
         const { code, userId, firstName, photoUrl } = params;
         const room = this.rooms.get(code);
@@ -145,7 +145,10 @@ class BombRoomManager extends EventEmitter {
             throw new ApiError("GAME_NOT_FOUND", "Game not found or expired", 404);
         }
         this.touch(room);
-        /* ===== Already member ===== */
+        /* ============================================================
+          1. Agar foydalanuvchi allaqachon xonada bo'lsa — faqat
+          connection statusini yangilaymiz, DB ga YOZMAYMIZ
+          ============================================================ */
         const existingSeat = room.players.findIndex((p) => p?.userId === userId);
         if (existingSeat >= 0) {
             const player = room.players[existingSeat];
@@ -163,12 +166,13 @@ class BombRoomManager extends EventEmitter {
             }
             return room;
         }
-        /* ===== New player ===== */
+        /* ============================================================
+          2. Yangi o'yinchi
+          ============================================================ */
         const emptySeatIdx = room.players.findIndex((p) => p === null);
         if (emptySeatIdx < 0) {
             throw new ApiError("GAME_FULL", "This game is already full", 409);
         }
-        /* Only allow joining in WAITING or PAUSED */
         if (room.status !== "WAITING" && room.status !== "PAUSED") {
             throw new ApiError("GAME_ALREADY_STARTED", "This game has already started", 409);
         }
@@ -185,16 +189,38 @@ class BombRoomManager extends EventEmitter {
             connected: true,
             disconnectedAt: null,
         };
+        /* ============================================================
+          3. DB ga YOZISH — upsert bilan (idempotent)
+          ============================================================ */
+        try {
+            await prisma.gamePlayer.upsert({
+                where: {
+                    sessionId_userId: {
+                        sessionId: room.sessionId,
+                        userId,
+                    },
+                },
+                update: {
+                /* Allaqachon mavjud bo'lsa — hech narsa qilmaymiz */
+                },
+                create: {
+                    sessionId: room.sessionId,
+                    userId,
+                    seat: emptySeat,
+                },
+            });
+        }
+        catch (err) {
+            console.error("[bomb.room] gamePlayer.upsert failed:", err);
+        }
+        /* ============================================================
+          4. In-memory state
+          ============================================================ */
         room.players[emptySeat] = player;
         this.userToRoom.set(userId, code);
-        await prisma.gamePlayer.create({
-            data: {
-                sessionId: room.sessionId,
-                userId,
-                seat: emptySeat,
-            },
-        });
-        /* Both players present → resume or start */
+        /* ============================================================
+          5. Ikkala o'yinchi ham bor bo'lsa
+          ============================================================ */
         if (room.players[0] && room.players[1]) {
             const opponent = room.players.find((p) => p?.userId !== userId);
             this.emit("opponent-joined", room.code, {

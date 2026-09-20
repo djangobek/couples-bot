@@ -16,11 +16,9 @@ const translations: Record<Lang, WebTranslations> = {
 
 const STORAGE_KEY = "couples_lang";
 
-/* ---------- Detect language ---------- */
 export function detectLanguage(
   telegramLangCode?: string | null,
 ): Lang {
-  /* 1. Stored preference */
   try {
     const stored = localStorage.getItem(STORAGE_KEY) as Lang | null;
     if (stored === "uz" || stored === "ru" || stored === "en") {
@@ -30,7 +28,6 @@ export function detectLanguage(
     /* ignore */
   }
 
-  /* 2. Telegram language */
   if (telegramLangCode) {
     const code = telegramLangCode.toLowerCase().slice(0, 2);
     if (code === "uz") return "uz";
@@ -41,7 +38,6 @@ export function detectLanguage(
   return "uz";
 }
 
-/* ---------- Save preference ---------- */
 export function saveLanguage(lang: Lang): void {
   try {
     localStorage.setItem(STORAGE_KEY, lang);
@@ -50,7 +46,6 @@ export function saveLanguage(lang: Lang): void {
   }
 }
 
-/* ---------- Translate ---------- */
 export function t(
   lang: Lang,
   key: string,
@@ -87,4 +82,4 @@ export function getTranslations(lang: Lang): WebTranslations {
   return translations[lang] ?? translations.uz;
 }
 
-export { type WebTranslations } from "./uz";
+export type { WebTranslations };

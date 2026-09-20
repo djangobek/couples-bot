@@ -45,36 +45,43 @@ export function GamesPage({
   const [tttCreateOpen, setTttCreateOpen] = useState(false);
   const [activeTttRoom, setActiveTttRoom] = useState<string | null>(null);
 
-  const consumedBombRef = useRef(false);
-  const consumedTttRef = useRef(false);
+  /* ------------------------------------------------------------
+     StrictMode-safe: refs faqat bir marta ishlashini ta'minlaydi
+     ------------------------------------------------------------ */
+  const bombHandledRef = useRef<string | null>(null);
+  const tttHandledRef = useRef<string | null>(null);
 
   /* ============ Deep-link: bomb ============ */
   useEffect(() => {
     if (!initialBombCode) return;
-    if (consumedBombRef.current) return;
-    consumedBombRef.current = true;
-
     const code = initialBombCode.toUpperCase();
+
+    /* Agar bu kod allaqachon ishlangan bo'lsa — qayta ishlamaymiz */
+    if (bombHandledRef.current === code) return;
+    bombHandledRef.current = code;
+
     setTab("bomb");
     setActiveBombRoom(code);
     hapticNotify("success");
+
+    /* URL ni tozalash — lekin sessionStorage ni SAQLAB qolamiz */
     onBombCodeConsumed?.();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialBombCode]);
+  }, [initialBombCode, onBombCodeConsumed]);
 
   /* ============ Deep-link: tictactoe ============ */
   useEffect(() => {
     if (!initialTttCode) return;
-    if (consumedTttRef.current) return;
-    consumedTttRef.current = true;
-
     const code = initialTttCode.toUpperCase();
+
+    if (tttHandledRef.current === code) return;
+    tttHandledRef.current = code;
+
     setTab("tictactoe");
     setActiveTttRoom(code);
     hapticNotify("success");
+
     onTttCodeConsumed?.();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialTttCode]);
+  }, [initialTttCode, onTttCodeConsumed]);
 
   function bump() {
     setRefreshKey((k) => k + 1);
@@ -192,11 +199,8 @@ export function GamesPage({
         })}
       </div>
 
-      {/* Content */}
-      <div
-        key={`${tab}-${refreshKey}`}
-        style={{ animation: "fadeInUp 400ms var(--ease-out)" }}
-      >
+      {/* Content — key faqat tab, refreshKey EMAS */}
+      <div key={tab} style={{ animation: "fadeInUp 400ms var(--ease-out)" }}>
         {tab === "challenges" && (
           <ChallengeList
             onCreateClick={() => setCreateOpen(true)}
@@ -209,6 +213,7 @@ export function GamesPage({
         {tab === "bomb" && (
           <>
             <BombLobby
+              key={`bomb-lobby-${refreshKey}`}
               onCreateClick={() => setBombCreateOpen(true)}
               onJoinGame={(code) => setActiveBombRoom(code)}
             />
@@ -246,6 +251,7 @@ export function GamesPage({
         {tab === "tictactoe" && (
           <>
             <TttLobby
+              key={`ttt-lobby-${refreshKey}`}
               onCreateClick={() => setTttCreateOpen(true)}
               onJoinGame={(code) => setActiveTttRoom(code)}
             />
@@ -308,7 +314,7 @@ export function GamesPage({
 }
 
 /* ============================================================
-   Games grid — icon buttons
+   Games grid
    ============================================================ */
 type Game = {
   id: string;

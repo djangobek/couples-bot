@@ -2,7 +2,7 @@
    WEB i18n — ENGLISH (en)
    ============================================================ */
 
-import type { WebTranslations } from "./uz.js";
+import type { WebTranslations } from "./uz";
 
 export const en: WebTranslations = {
   common: {

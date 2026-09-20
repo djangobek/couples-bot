@@ -25,7 +25,6 @@ export function BombGame({
 }) {
   const toast = useToast();
   const socketRef = useRef<BombSocket | null>(null);
-  const mountedRef = useRef(false);
   const joinAttemptRef = useRef(0);
 
   const [joinPhase, setJoinPhase] = useState<JoinPhase>("connecting");
@@ -48,9 +47,6 @@ export function BombGame({
      1. JOIN via REST
      ============================================================ */
   useEffect(() => {
-    if (mountedRef.current) return;
-    mountedRef.current = true;
-
     let cancelled = false;
 
     (async () => {
@@ -58,7 +54,7 @@ export function BombGame({
       setJoinError(null);
       joinAttemptRef.current = 0;
 
-      const code = roomCode.toUpperCase();
+      const code = roomCode.trim().toUpperCase();
 
       while (joinAttemptRef.current < 3) {
         if (cancelled) return;

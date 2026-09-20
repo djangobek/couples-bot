@@ -2,7 +2,7 @@
    WEB i18n — РУССКИЙ ЯЗЫК (ru)
    ============================================================ */
 
-import type { WebTranslations } from "./uz.js";
+import type { WebTranslations } from "./uz";
 
 export const ru: WebTranslations = {
   common: {

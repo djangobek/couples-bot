@@ -156,8 +156,8 @@ class TttRoomManager extends EventEmitter {
         return room;
     }
     /* ============================================================
-       JOIN
-       ============================================================ */
+     JOIN — idempotent, StrictMode-safe
+     ============================================================ */
     async joinRoom(params) {
         const { code, userId, firstName, photoUrl } = params;
         const room = this.rooms.get(code);
@@ -165,6 +165,10 @@ class TttRoomManager extends EventEmitter {
             throw new ApiError("GAME_NOT_FOUND", "Game not found or expired", 404);
         }
         this.touch(room);
+        /* ============================================================
+          1. Agar foydalanuvchi allaqachon xonada bo'lsa — faqat
+          connection statusini yangilaymiz, DB ga YOZMAYMIZ
+          ============================================================ */
         const existingSeat = room.players.findIndex((p) => p?.userId === userId);
         if (existingSeat >= 0) {
             const player = room.players[existingSeat];
@@ -182,6 +186,9 @@ class TttRoomManager extends EventEmitter {
             this.emit("state-changed", room.code);
             return room;
         }
+        /* ============================================================
+          2. Yangi o'yinchi — bo'sh joyni topamiz
+          ============================================================ */
         const emptySeatIdx = room.players.findIndex((p) => p === null);
         if (emptySeatIdx < 0) {
             throw new ApiError("GAME_FULL", "This game is already full", 409);
@@ -191,6 +198,7 @@ class TttRoomManager extends EventEmitter {
         }
         const emptySeat = emptySeatIdx;
         const symbol = emptySeat === 0 ? "X" : "O";
+        /* Config dan icon ni olamiz */
         const session = await prisma.gameSession.findUnique({
             where: { id: room.sessionId },
             select: { config: true },
@@ -212,16 +220,42 @@ class TttRoomManager extends EventEmitter {
             connected: true,
             disconnectedAt: null,
         };
+        /* ============================================================
+          3. DB ga YOZISH — faqat agar hali mavjud bo'lmasa
+          Bu yerda upsert ishlatamiz — race condition ham himoyalangan
+          ============================================================ */
+        try {
+            await prisma.gamePlayer.upsert({
+                where: {
+                    sessionId_userId: {
+                        sessionId: room.sessionId,
+                        userId,
+                    },
+                },
+                update: {
+                /* Agar allaqachon mavjud bo'lsa — hech narsa qilmaymiz */
+                },
+                create: {
+                    sessionId: room.sessionId,
+                    userId,
+                    seat: emptySeat,
+                    symbol: playerSymbol,
+                },
+            });
+        }
+        catch (err) {
+            /* P2002 yoki boshqa xato — log qilamiz, lekin davom etamiz */
+            console.error("[ttt.room] gamePlayer.upsert failed:", err);
+            /* Agar xato bo'lsa ham, in-memory room'ga qo'shamiz */
+        }
+        /* ============================================================
+          4. In-memory state ni yangilaymiz
+          ============================================================ */
         room.players[emptySeat] = player;
         this.userToRoom.set(userId, code);
-        await prisma.gamePlayer.create({
-            data: {
-                sessionId: room.sessionId,
-                userId,
-                seat: emptySeat,
-                symbol: playerSymbol,
-            },
-        });
+        /* ============================================================
+          5. Ikkala o'yinchi ham bor bo'lsa — o'yinni boshlaymiz
+          ============================================================ */
         if (room.players[0] && room.players[1]) {
             const opponent = room.players.find((p) => p?.userId !== userId);
             this.emit("opponent-joined", room.code, {

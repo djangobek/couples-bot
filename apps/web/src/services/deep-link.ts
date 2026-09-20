@@ -1,11 +1,14 @@
 /* ============================================================
-   DEEP-LINK MANAGER (Senior)
+   DEEP-LINK MANAGER v4 — StrictMode-safe
    Handles: invite, bomb, tictactoe
+   - NO module-level "captured" flags (StrictMode-safe)
+   - Always reads from URL → start_param → sessionStorage
+   - TTL for stored codes
    ============================================================ */
 
-const STORAGE_KEY_BOMB = "couples_pending_bomb_v3";
-const STORAGE_KEY_TTT = "couples_pending_ttt_v3";
-const STORAGE_KEY_INVITE = "couples_pending_invite_v3";
+const STORAGE_KEY_BOMB = "couples_pending_bomb_v4";
+const STORAGE_KEY_TTT = "couples_pending_ttt_v4";
+const STORAGE_KEY_INVITE = "couples_pending_invite_v4";
 const CODE_TTL_MS = 5 * 60_000;
 
 type StoredCode = {
@@ -59,42 +62,32 @@ function readFromStartParam(): string | null {
 /* ============================================================
    BOMB
    ============================================================ */
-let initialBombCaptured = false;
-let initialBombCode: string | null = null;
-
 export function captureInitialBombCode(): string | null {
-  if (initialBombCaptured) return initialBombCode;
-  initialBombCaptured = true;
-
+  /* 1. URL query: ?bomb=XXXXXX */
   const fromUrl = readFromUrl("bomb");
   if (fromUrl && /^[A-Za-z0-9]{6}$/.test(fromUrl)) {
-    initialBombCode = fromUrl.toUpperCase();
-    writeStorage(STORAGE_KEY_BOMB, {
-      code: initialBombCode,
-      savedAt: Date.now(),
-    } satisfies StoredCode);
-    return initialBombCode;
+    const code = fromUrl.toUpperCase();
+    writeStorage(STORAGE_KEY_BOMB, { code, savedAt: Date.now() } satisfies StoredCode);
+    return code;
   }
 
+  /* 2. Telegram start_param: bomb_XXXXXX */
   const sp = readFromStartParam();
   if (sp) {
     const m = sp.match(/^bomb_([A-Za-z0-9]{6})$/i);
     if (m) {
-      initialBombCode = m[1].toUpperCase();
-      writeStorage(STORAGE_KEY_BOMB, {
-        code: initialBombCode,
-        savedAt: Date.now(),
-      } satisfies StoredCode);
-      return initialBombCode;
+      const code = m[1].toUpperCase();
+      writeStorage(STORAGE_KEY_BOMB, { code, savedAt: Date.now() } satisfies StoredCode);
+      return code;
     }
   }
 
+  /* 3. sessionStorage (TTL tekshiruvi bilan) */
   const stored = readStorage<StoredCode>(STORAGE_KEY_BOMB);
   if (stored?.code) {
     const age = Date.now() - stored.savedAt;
     if (age < CODE_TTL_MS && /^[A-Za-z0-9]{6}$/.test(stored.code)) {
-      initialBombCode = stored.code.toUpperCase();
-      return initialBombCode;
+      return stored.code.toUpperCase();
     }
     removeStorage(STORAGE_KEY_BOMB);
   }
@@ -109,33 +102,21 @@ export function clearPendingBombCode(): void {
 /* ============================================================
    TIC-TAC-TOE
    ============================================================ */
-let initialTttCaptured = false;
-let initialTttCode: string | null = null;
-
 export function captureInitialTttCode(): string | null {
-  if (initialTttCaptured) return initialTttCode;
-  initialTttCaptured = true;
-
   const fromUrl = readFromUrl("ttt");
   if (fromUrl && /^[A-Za-z0-9]{6}$/.test(fromUrl)) {
-    initialTttCode = fromUrl.toUpperCase();
-    writeStorage(STORAGE_KEY_TTT, {
-      code: initialTttCode,
-      savedAt: Date.now(),
-    } satisfies StoredCode);
-    return initialTttCode;
+    const code = fromUrl.toUpperCase();
+    writeStorage(STORAGE_KEY_TTT, { code, savedAt: Date.now() } satisfies StoredCode);
+    return code;
   }
 
   const sp = readFromStartParam();
   if (sp) {
     const m = sp.match(/^ttt_([A-Za-z0-9]{6})$/i);
     if (m) {
-      initialTttCode = m[1].toUpperCase();
-      writeStorage(STORAGE_KEY_TTT, {
-        code: initialTttCode,
-        savedAt: Date.now(),
-      } satisfies StoredCode);
-      return initialTttCode;
+      const code = m[1].toUpperCase();
+      writeStorage(STORAGE_KEY_TTT, { code, savedAt: Date.now() } satisfies StoredCode);
+      return code;
     }
   }
 
@@ -143,8 +124,7 @@ export function captureInitialTttCode(): string | null {
   if (stored?.code) {
     const age = Date.now() - stored.savedAt;
     if (age < CODE_TTL_MS && /^[A-Za-z0-9]{6}$/.test(stored.code)) {
-      initialTttCode = stored.code.toUpperCase();
-      return initialTttCode;
+      return stored.code.toUpperCase();
     }
     removeStorage(STORAGE_KEY_TTT);
   }
@@ -159,20 +139,10 @@ export function clearPendingTttCode(): void {
 /* ============================================================
    INVITE
    ============================================================ */
-let initialInviteCaptured = false;
-let initialInviteCode: string | null = null;
-
 export function captureInitialInviteCode(): string | null {
-  if (initialInviteCaptured) return initialInviteCode;
-  initialInviteCaptured = true;
-
   const fromUrl = readFromUrl("invite");
   if (fromUrl) {
-    initialInviteCode = fromUrl;
-    writeStorage(STORAGE_KEY_INVITE, {
-      code: fromUrl,
-      savedAt: Date.now(),
-    } satisfies StoredCode);
+    writeStorage(STORAGE_KEY_INVITE, { code: fromUrl, savedAt: Date.now() } satisfies StoredCode);
     return fromUrl;
   }
 
@@ -180,11 +150,7 @@ export function captureInitialInviteCode(): string | null {
   if (sp) {
     const m = sp.match(/^invite_(.+)$/);
     if (m) {
-      initialInviteCode = m[1];
-      writeStorage(STORAGE_KEY_INVITE, {
-        code: m[1],
-        savedAt: Date.now(),
-      } satisfies StoredCode);
+      writeStorage(STORAGE_KEY_INVITE, { code: m[1], savedAt: Date.now() } satisfies StoredCode);
       return m[1];
     }
   }
@@ -193,7 +159,6 @@ export function captureInitialInviteCode(): string | null {
   if (stored?.code) {
     const age = Date.now() - stored.savedAt;
     if (age < CODE_TTL_MS) {
-      initialInviteCode = stored.code;
       return stored.code;
     }
     removeStorage(STORAGE_KEY_INVITE);
@@ -202,6 +167,13 @@ export function captureInitialInviteCode(): string | null {
   return null;
 }
 
+export function clearPendingInviteCode(): void {
+  removeStorage(STORAGE_KEY_INVITE);
+}
+
+/* ============================================================
+   Legacy aliases (boshqa fayllar uchun)
+   ============================================================ */
 export function getPendingBombCode(): string | null {
   return captureInitialBombCode();
 }
@@ -214,10 +186,9 @@ export function getPendingInviteCode(): string | null {
   return captureInitialInviteCode();
 }
 
-export function clearPendingInviteCode(): void {
-  removeStorage(STORAGE_KEY_INVITE);
-}
-
+/* ============================================================
+   URL CLEANUP
+   ============================================================ */
 export function cleanUrl(): void {
   try {
     const url = new URL(window.location.href);

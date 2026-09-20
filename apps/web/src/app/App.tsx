@@ -12,12 +12,12 @@ import { OnboardingPage } from "../pages/OnboardingPage";
 import { useApp } from "../context/AppContext";
 import { SubscriptionGate } from "../features/subscription/SubscriptionGate";
 import {
-  getPendingInviteCode,
-  clearPendingInviteCode,
   captureInitialBombCode,
   captureInitialTttCode,
+  captureInitialInviteCode,
   clearPendingBombCode,
   clearPendingTttCode,
+  clearPendingInviteCode,
   cleanUrl,
 } from "../services/deep-link";
 import type { TabKey } from "../types/domain";
@@ -31,8 +31,13 @@ export function App() {
   const [retrying, setRetrying] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
 
+  /* ------------------------------------------------------------
+     Deep-link handling — StrictMode-safe
+     Har safar URL/start_param/sessionStorage dan o'qiladi.
+     Faqat state ga yoziladi, hech narsa o'chirilmaydi.
+     ------------------------------------------------------------ */
   useEffect(() => {
-    const invite = getPendingInviteCode();
+    const invite = captureInitialInviteCode();
     if (invite) {
       setInviteCode(invite);
       return;
@@ -119,18 +124,20 @@ export function App() {
         onJoined={() => {
           setInviteCode(null);
           clearPendingInviteCode();
+          cleanUrl();
           setTab("home");
         }}
         onBack={() => {
           setInviteCode(null);
           clearPendingInviteCode();
+          cleanUrl();
         }}
       />
     );
   }
 
   /* ============================================================
-     Subscription GATE — blocks all app until subscribed
+     Subscription GATE
      ============================================================ */
   if (!isMember) {
     return (
@@ -141,7 +148,7 @@ export function App() {
   }
 
   /* ============================================================
-     Settings page (as full screen)
+     Settings page (full screen)
      ============================================================ */
   if (showSettings) {
     return (
@@ -189,13 +196,11 @@ export function App() {
             initialBombCode={bombCode}
             initialTttCode={tttCode}
             onBombCodeConsumed={() => {
-              setBombCode(null);
-              clearPendingBombCode();
+              /* Faqat URL ni tozalaymiz — sessionStorage ni EMAS.
+                 Chunki StrictMode qayta mount bo'lsa, kerak bo'ladi. */
               cleanUrl();
             }}
             onTttCodeConsumed={() => {
-              setTttCode(null);
-              clearPendingTttCode();
               cleanUrl();
             }}
           />
@@ -210,7 +215,7 @@ export function App() {
 }
 
 /* ============================================================
-   Header — settings button
+   Header
    ============================================================ */
 function Header({ onSettings }: { onSettings: () => void }) {
   return (
