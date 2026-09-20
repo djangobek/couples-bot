@@ -1,0 +1,170 @@
+/* ============================================================
+   COUPLES PLATFORM — DESIGN TOKENS v2.0
+   Editorial premium · romantic · private
+   ============================================================ */
+
+:root {
+  /* ---------- Color: Background & Surface ---------- */
+  /* Deep rose-tinted blacks — warmer than pure gray */
+  --bg: #0a0709;
+  --bg-subtle: #0f0c10;
+  --surface: #161217;
+  --surface-elevated: #1e1820;
+  --surface-hover: #26202b;
+  --surface-pressed: #2f2835;
+
+  /* ---------- Color: Text ---------- */
+  --text-primary: #faf7fb;
+  --text-secondary: #c2b9cc;
+  --text-tertiary: #8a8093;
+  --text-inverse: #0a0709;
+
+  /* ---------- Color: Accent (Rose Gold) ---------- */
+  --accent: #e8a5c0;
+  --accent-strong: #f0b8cd;
+  --accent-deep: #c97fa0;
+  --accent-soft: rgba(232, 165, 192, 0.12);
+  --accent-glow: rgba(232, 165, 192, 0.32);
+  --accent-tint: rgba(232, 165, 192, 0.06);
+
+  /* ---------- Color: Secondary Accent (Amethyst) ---------- */
+  --violet: #b49bd8;
+  --violet-soft: rgba(180, 155, 216, 0.12);
+  --violet-deep: #8b6fd4;
+
+  /* ---------- Color: State ---------- */
+  --success: #86d4a8;
+  --success-soft: rgba(134, 212, 168, 0.12);
+  --warning: #f0c48a;
+  --warning-soft: rgba(240, 196, 138, 0.12);
+  --danger: #f08a95;
+  --danger-soft: rgba(240, 138, 149, 0.12);
+
+  /* ---------- Color: Border ---------- */
+  --border: rgba(255, 255, 255, 0.055);
+  --border-strong: rgba(255, 255, 255, 0.1);
+  --border-accent: rgba(232, 165, 192, 0.22);
+
+  /* ---------- Typography ---------- */
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  --font-serif: "Playfair Display", "Georgia", "Times New Roman", serif;
+  --font-mono: ui-monospace, "SF Mono", "Menlo", "Consolas", monospace;
+
+  --fs-xs: 0.6875rem;    /* 11px */
+  --fs-sm: 0.8125rem;    /* 13px */
+  --fs-base: 0.9375rem;  /* 15px */
+  --fs-md: 1.0625rem;    /* 17px */
+  --fs-lg: 1.25rem;      /* 20px */
+  --fs-xl: 1.625rem;     /* 26px */
+  --fs-2xl: 2.125rem;    /* 34px */
+  --fs-3xl: 2.75rem;     /* 44px */
+  --fs-hero: 3.5rem;     /* 56px */
+
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+
+  --lh-tight: 1.08;
+  --lh-snug: 1.3;
+  --lh-normal: 1.5;
+  --lh-relaxed: 1.65;
+
+  --tracking-tight: -0.025em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.06em;
+  --tracking-wider: 0.14em;
+
+  /* ---------- Spacing (8px grid) ---------- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* ---------- Radius ---------- */
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+  --radius-2xl: 32px;
+  --radius-full: 9999px;
+
+  /* ---------- Shadow ---------- */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.32);
+  --shadow-md: 0 8px 20px rgba(0, 0, 0, 0.36);
+  --shadow-lg: 0 20px 48px rgba(0, 0, 0, 0.44);
+  --shadow-xl: 0 32px 72px rgba(0, 0, 0, 0.5);
+  --shadow-glow: 0 8px 28px var(--accent-glow);
+  --shadow-inner: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+
+  /* ---------- Motion ---------- */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --dur-fast: 160ms;
+  --dur-base: 260ms;
+  --dur-slow: 420ms;
+  --dur-slower: 620ms;
+
+  /* ---------- Layout ---------- */
+  --nav-height: 72px;
+  --header-height: 64px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --content-max: 600px;
+
+  /* ---------- Z-index ---------- */
+  --z-nav: 40;
+  --z-header: 30;
+  --z-modal-backdrop: 60;
+  --z-modal: 70;
+  --z-toast: 90;
+}
+
+/* ============================================================
+   LIGHT THEME
+   ============================================================ */
+
+[data-theme="light"] {
+  --bg: #fbf8fa;
+  --bg-subtle: #f4eef2;
+  --surface: #ffffff;
+  --surface-elevated: #ffffff;
+  --surface-hover: #f8f2f5;
+  --surface-pressed: #f0e8ee;
+
+  --text-primary: #1a1018;
+  --text-secondary: #5a4d58;
+  --text-tertiary: #8a7d88;
+  --text-inverse: #ffffff;
+
+  --accent: #c46a91;
+  --accent-strong: #b85a82;
+  --accent-deep: #a04a70;
+  --accent-soft: rgba(196, 106, 145, 0.1);
+  --accent-glow: rgba(196, 106, 145, 0.25);
+  --accent-tint: rgba(196, 106, 145, 0.04);
+
+  --violet: #8b6fd4;
+  --violet-soft: rgba(139, 111, 212, 0.1);
+
+  --border: rgba(26, 16, 24, 0.07);
+  --border-strong: rgba(26, 16, 24, 0.14);
+  --border-accent: rgba(196, 106, 145, 0.22);
+
+  --shadow-xs: 0 1px 2px rgba(26, 16, 24, 0.05);
+  --shadow-sm: 0 2px 6px rgba(26, 16, 24, 0.06);
+  --shadow-md: 0 8px 20px rgba(26, 16, 24, 0.08);
+  --shadow-lg: 0 20px 48px rgba(26, 16, 24, 0.1);
+  --shadow-xl: 0 32px 72px rgba(26, 16, 24, 0.12);
+  --shadow-inner: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}

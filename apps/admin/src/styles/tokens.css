@@ -1,0 +1,125 @@
+/* ============================================================
+   ADMIN — Design tokens
+   Separate palette from user web app
+   ============================================================ */
+
+:root,
+[data-theme="dark"] {
+  /* Background */
+  --bg: #0a0a0d;
+  --bg-subtle: #0f0f14;
+  --surface: #14141a;
+  --surface-elevated: #1a1a22;
+  --surface-hover: #21212b;
+  --surface-pressed: #2a2a36;
+
+  /* Text */
+  --text-primary: #f0f0f5;
+  --text-secondary: #a0a0b0;
+  --text-tertiary: #6b6b7d;
+  --text-inverse: #0a0a0d;
+
+  /* Accent — indigo (admin feel) */
+  --accent: #6366f1;
+  --accent-strong: #818cf8;
+  --accent-soft: rgba(99, 102, 241, 0.12);
+  --accent-glow: rgba(99, 102, 241, 0.35);
+
+  /* Semantic */
+  --success: #10b981;
+  --success-soft: rgba(16, 185, 129, 0.14);
+  --warning: #f59e0b;
+  --warning-soft: rgba(245, 158, 11, 0.14);
+  --danger: #ef4444;
+  --danger-soft: rgba(239, 68, 68, 0.14);
+  --info: #3b82f6;
+  --info-soft: rgba(59, 130, 246, 0.14);
+
+  /* Border */
+  --border: rgba(255, 255, 255, 0.07);
+  --border-strong: rgba(255, 255, 255, 0.12);
+  --border-accent: rgba(99, 102, 241, 0.4);
+
+  /* Typography */
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", "Menlo",
+    "Consolas", monospace;
+
+  --fs-xs: 11px;
+  --fs-sm: 12px;
+  --fs-base: 13px;
+  --fs-md: 14px;
+  --fs-lg: 16px;
+  --fs-xl: 20px;
+  --fs-2xl: 26px;
+  --fs-3xl: 32px;
+
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  /* Radius */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+  --radius-full: 9999px;
+
+  /* Shadow */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.5);
+  --shadow-xl: 0 24px 60px rgba(0, 0, 0, 0.6);
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-fast: 140ms;
+  --dur-base: 220ms;
+
+  /* Layout */
+  --sidebar-width: 240px;
+  --topbar-height: 56px;
+}
+
+[data-theme="light"] {
+  --bg: #f7f8fa;
+  --bg-subtle: #eef0f4;
+  --surface: #ffffff;
+  --surface-elevated: #ffffff;
+  --surface-hover: #f3f4f6;
+  --surface-pressed: #e9eaee;
+
+  --text-primary: #0f1115;
+  --text-secondary: #4b5563;
+  --text-tertiary: #9ca3af;
+  --text-inverse: #ffffff;
+
+  --accent: #4f46e5;
+  --accent-strong: #6366f1;
+  --accent-soft: rgba(79, 70, 229, 0.1);
+  --accent-glow: rgba(79, 70, 229, 0.25);
+
+  --success: #059669;
+  --success-soft: rgba(5, 150, 105, 0.1);
+  --warning: #d97706;
+  --warning-soft: rgba(217, 119, 6, 0.1);
+  --danger: #dc2626;
+  --danger-soft: rgba(220, 38, 38, 0.1);
+  --info: #2563eb;
+  --info-soft: rgba(37, 99, 235, 0.1);
+
+  --border: rgba(15, 17, 21, 0.08);
+  --border-strong: rgba(15, 17, 21, 0.14);
+  --border-accent: rgba(79, 70, 229, 0.3);
+
+  --shadow-sm: 0 1px 2px rgba(15, 17, 21, 0.05);
+  --shadow-md: 0 4px 12px rgba(15, 17, 21, 0.08);
+  --shadow-lg: 0 12px 32px rgba(15, 17, 21, 0.12);
+  --shadow-xl: 0 24px 60px rgba(15, 17, 21, 0.16);
+}

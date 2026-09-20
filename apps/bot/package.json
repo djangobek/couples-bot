@@ -1,0 +1,22 @@
+{
+  "name": "@couples/bot",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@couples/config": "workspace:*",
+    "@couples/database": "workspace:*",
+    "grammy": "^1.30.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "tsx": "^4.20.5",
+    "typescript": "^5.8.3"
+  }
+}

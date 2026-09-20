@@ -1,0 +1,660 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserStatus {
+  ACTIVE
+  BLOCKED
+  DELETED
+}
+
+enum CoupleStatus {
+  PENDING
+  ACTIVE
+  PAUSED
+  ARCHIVED
+}
+
+enum CoupleRole {
+  OWNER
+  PARTNER
+}
+
+enum InviteStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+  REVOKED
+}
+
+enum MemoryType {
+  PHOTO
+  VIDEO
+  AUDIO
+  DOCUMENT
+  TEXT
+}
+
+enum Visibility {
+  COUPLE
+  PRIVATE
+}
+
+enum LetterStatus {
+  DRAFT
+  SENT
+  READ
+  ARCHIVED
+}
+
+enum ReadingBookStatus {
+  ACTIVE
+  COMPLETED
+  ARCHIVED
+}
+
+enum ReadingParticipantStatus {
+  ACTIVE
+  LEFT
+  COMPLETED
+}
+
+enum ChallengeStatus {
+  DRAFT
+  PENDING
+  ACTIVE
+  COMPLETED
+  CANCELLED
+  EXPIRED
+}
+
+enum ChallengeType {
+  READING_RACE
+  STREAK
+  PAGES
+  CUSTOM
+}
+
+enum ActivityType {
+  MEMORY_ADDED
+  MEMORY_REACTED
+  LETTER_SENT
+  BOOK_ADDED
+  READING_PROGRESS
+  CHALLENGE_CREATED
+  CHALLENGE_COMPLETED
+  DATE_CREATED
+  PARTNER_JOINED
+  PARTNER_LEFT
+}
+
+enum MediaStorage {
+  TELEGRAM
+  EXTERNAL
+}
+
+enum TelegramFileType {
+  DOCUMENT
+  PHOTO
+  VIDEO
+  AUDIO
+  THUMBNAIL
+}
+
+enum GameType {
+  BOMB
+  TIC_TAC_TOE
+}
+
+enum GameSessionStatus {
+  WAITING
+  PLACING
+  PLAYING
+  PAUSED
+  FINISHED
+  ABANDONED
+  EXPIRED
+}
+
+enum Language {
+  UZ
+  RU
+  EN
+}
+
+model User {
+  id                  String          @id @default(uuid())
+  telegramId          BigInt          @unique
+  username            String?
+  firstName           String?
+  lastName            String?
+  languageCode        String?
+  language            Language        @default(UZ)
+  photoUrl             String?
+  status              UserStatus      @default(ACTIVE)
+  lastSeenAt           DateTime?
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+  referralCode         String?         @unique
+  referralCount        Int             @default(0)
+
+  memberships         CoupleMember[]
+  sentInvites          CoupleInvite[] @relation("InviteSender")
+  receivedInvites      CoupleInvite[] @relation("InviteReceiver")
+  memories             Memory[]        @relation("MemoryAuthor")
+  privateMemories      Memory[]        @relation("PrivateMemoryOwner")
+  reactions            MemoryReaction[]
+  lettersSent          Letter[]        @relation("LetterSender")
+  lettersReceived      Letter[]        @relation("LetterReceiver")
+  readingBooksAdded     ReadingBook[]     @relation("ReadingBookAddedBy")
+  readingParticipants  ReadingParticipant[]
+  readingProgress      ReadingProgress[]
+  createdChallenges    CoupleChallenge[] @relation("ChallengeCreator")
+  wonChallenges        CoupleChallenge[] @relation("ChallengeWinner")
+  challengeParticipants ChallengeParticipant[]
+  dateEvents           DateEvent[]     @relation("DateCreator")
+  activityEvents       ActivityEvent[]
+  sessions             AuthSession[]
+  auditLogs             AuditLog[]      @relation("AuditActor")
+  createdGames         GameSession[]   @relation("GameCreator")
+  wonGames             GameSession[]   @relation("GameWinner")
+  gamePlayers          GamePlayer[]
+  gameMoves            GameMove[]
+
+  /* NEW: Subscription + Referral + Broadcast */
+  subscriptions       Subscription[]
+  referralsMade       Referral[]       @relation("ReferralsMade")
+  referralsReceived   Referral?        @relation("ReferralsReceived")
+  broadcasts          Broadcast[]
+
+  @@index([createdAt])
+  @@index([lastSeenAt])
+  @@index([status, createdAt])
+  @@index([username])
+  @@index([language])
+}
+
+model Subscription {
+  id        String   @id @default(uuid())
+  userId    String
+  channelId String
+  isActive  Boolean  @default(false)
+  checkedAt DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, channelId])
+  @@index([userId, isActive])
+}
+
+model Referral {
+  id          String   @id @default(uuid())
+  referrerId  String
+  referredId  String   @unique
+  bonusGiven  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  referrer    User @relation("ReferralsMade", fields: [referrerId], references: [id], onDelete: Cascade)
+  referred    User @relation("ReferralsReceived", fields: [referredId], references: [id], onDelete: Cascade)
+
+  @@index([referrerId])
+}
+
+model Broadcast {
+  id           String   @id @default(uuid())
+  adminId      String
+  message      String   @db.Text
+  parseMode    String   @default("HTML")
+  sentCount    Int      @default(0)
+  failedCount  Int      @default(0)
+  status       String   @default("PENDING")
+  createdAt    DateTime @default(now())
+  completedAt  DateTime?
+
+  admin        User @relation(fields: [adminId], references: [id])
+
+  @@index([adminId, createdAt])
+  @@index([status])
+}
+
+model Couple {
+  id                 String             @id @default(uuid())
+  status             CoupleStatus       @default(PENDING)
+  displayName        String?
+  anniversaryDate    DateTime?
+  timezone           String             @default("UTC")
+  settings           Json?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  archivedAt         DateTime?
+
+  members            CoupleMember[]
+  invites            CoupleInvite[]
+  memories           Memory[]
+  letters            Letter[]
+  books              ReadingBook[]
+  challenges         CoupleChallenge[]
+  dates              DateEvent[]
+  activities         ActivityEvent[]
+  auditLogs          AuditLog[]
+  gameSessions       GameSession[]
+
+  @@index([status])
+  @@index([archivedAt])
+}
+
+model CoupleMember {
+  id          String     @id @default(uuid())
+  coupleId   String
+  userId     String
+  role        CoupleRole @default(PARTNER)
+  joinedAt   DateTime    @default(now())
+  leftAt     DateTime?
+
+  couple      Couple @relation(fields: [coupleId], references: [id], onDelete: Cascade)
+  user        User   @relation(fields: [userId], references: [id])
+
+  @@unique([coupleId, userId])
+  @@index([userId, leftAt])
+  @@index([coupleId, leftAt])
+  @@index([coupleId, role])
+}
+
+model CoupleInvite {
+  id          String       @id @default(uuid())
+  coupleId    String
+  senderId    String
+  receiverId  String?
+  tokenHash   String       @unique
+  status      InviteStatus @default(PENDING)
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+  revokedAt   DateTime?
+  createdAt   DateTime     @default(now())
+
+  couple      Couple @relation(fields: [coupleId], references: [id], onDelete: Cascade)
+  sender      User   @relation("InviteSender", fields: [senderId], references: [id])
+  receiver    User?  @relation("InviteReceiver", fields: [receiverId], references: [id], onDelete: SetNull)
+
+  @@index([coupleId, status])
+  @@index([receiverId, status])
+  @@index([expiresAt])
+}
+
+model AuthSession {
+  id           String   @id @default(uuid())
+  userId       String
+  sessionHash  String   @unique
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+  lastUsedAt   DateTime @default(now())
+  revokedAt    DateTime?
+
+  user         User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, revokedAt])
+  @@index([expiresAt])
+}
+
+model Memory {
+  id             String          @id @default(uuid())
+  coupleId       String
+  authorId       String
+  privateOwnerId String?
+  type           MemoryType
+  visibility     Visibility      @default(COUPLE)
+  title          String?
+  caption        String?
+  eventAt        DateTime?
+  locationName   String?
+  metadata       Json?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  deletedAt      DateTime?
+
+  couple         Couple          @relation(fields: [coupleId], references: [id], onDelete: Cascade)
+  author         User            @relation("MemoryAuthor", fields: [authorId], references: [id])
+  privateOwner   User?           @relation("PrivateMemoryOwner", fields: [privateOwnerId], references: [id], onDelete: SetNull)
+  media          MediaAsset[]
+  reactions      MemoryReaction[]
+
+  @@index([coupleId, createdAt])
+  @@index([coupleId, eventAt])
+  @@index([authorId, createdAt])
+  @@index([coupleId, deletedAt, createdAt])
+  @@index([coupleId, deletedAt, eventAt])
+}
+
+model TelegramFileReference {
+  id               String            @id @default(uuid())
+  sourceKey        String            @default("couples-bot")
+  telegramChatId   BigInt?
+  telegramFileId   String
+  telegramFileUniqueId String?
+  fileType         TelegramFileType
+  mimeType         String?
+  fileName         String?
+  fileSize         BigInt?
+  width            Int?
+  height           Int?
+  durationSec      Int?
+  metadata         Json?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  mediaAssets      MediaAsset[]      @relation("MediaTelegramFile")
+  readingBooks     ReadingBook[]     @relation("ReadingBookFile")
+  readingBookCovers ReadingBook[]    @relation("ReadingBookCover")
+
+  @@unique([sourceKey, telegramFileId])
+  @@index([sourceKey, telegramFileUniqueId])
+  @@index([telegramChatId])
+}
+
+model MediaAsset {
+  id                String                 @id @default(uuid())
+  memoryId          String
+  storage           MediaStorage           @default(TELEGRAM)
+  telegramFileRefId String?
+  externalUrl       String?
+  checksum          String?
+  metadata          Json?
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+  deletedAt         DateTime?
+
+  memory            Memory                 @relation(fields: [memoryId], references: [id], onDelete: Cascade)
+  telegramFile      TelegramFileReference? @relation("MediaTelegramFile", fields: [telegramFileRefId], references: [id], onDelete: SetNull)
+
+  @@index([memoryId, createdAt])
+  @@index([telegramFileRefId])
+  @@index([deletedAt])
+}
+
+model MemoryReaction {
+  id        String   @id @default(uuid())
+  memoryId String
+  userId   String
+  emoji     String
+  createdAt DateTime @default(now())
+
+  memory Memory @relation(fields: [memoryId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([memoryId, userId, emoji])
+  @@index([memoryId, createdAt])
+}
+
+model Letter {
+  id          String       @id @default(uuid())
+  coupleId    String
+  senderId    String
+  receiverId  String
+  title       String?
+  body        String
+  status      LetterStatus @default(DRAFT)
+  scheduledAt DateTime?
+  sentAt      DateTime?
+  readAt      DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  couple   Couple @relation(fields: [coupleId], references: [id], onDelete: Cascade)
+  sender   User   @relation("LetterSender", fields: [senderId], references: [id])
+  receiver User   @relation("LetterReceiver", fields: [receiverId], references: [id])
+
+  @@index([coupleId, createdAt])
+  @@index([receiverId, status])
+}
+
+model ReadingBook {
+  id             String            @id @default(uuid())
+  coupleId       String
+  addedById      String
+  title          String
+  author         String?
+  description    String?
+  pageCount      Int?
+  storage        MediaStorage       @default(TELEGRAM)
+  fileRefId      String?
+  coverFileRefId String?
+  externalUrl    String?
+  status         ReadingBookStatus @default(ACTIVE)
+  startedAt      DateTime?
+  completedAt    DateTime?
+  metadata       Json?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  couple       Couple              @relation(fields: [coupleId], references: [id], onDelete: Cascade)
+  addedBy      User                @relation("ReadingBookAddedBy", fields: [addedById], references: [id])
+  fileRef      TelegramFileReference? @relation("ReadingBookFile", fields: [fileRefId], references: [id], onDelete: SetNull)
+  coverFileRef TelegramFileReference? @relation("ReadingBookCover", fields: [coverFileRefId], references: [id], onDelete: SetNull)
+  participants ReadingParticipant[]
+  progress    ReadingProgress[]
+  challenges   CoupleChallenge[]
+
+  @@index([coupleId, status, createdAt])
+  @@index([addedById, createdAt])
+  @@index([fileRefId])
+  @@index([coverFileRefId])
+}
+
+model ReadingParticipant {
+  id         String                    @id @default(uuid())
+  bookId     String
+  userId     String
+  status     ReadingParticipantStatus  @default(ACTIVE)
+  joinedAt   DateTime                  @default(now())
+  completedAt DateTime?
+
+  book ReadingBook @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  user User        @relation(fields: [userId], references: [id])
+
+  @@unique([bookId, userId])
+  @@index([userId, status])
+}
+
+model ReadingProgress {
+  id               String   @id @default(uuid())
+  bookId           String
+  userId           String
+  currentPage      Int      @default(0)
+  pagesRead        Int      @default(0)
+  percent          Decimal  @default(0) @db.Decimal(5,2)
+  lastReadAt       DateTime @default(now())
+  streakDays       Int      @default(0)
+  totalReadSeconds Int      @default(0)
+  metadata         Json?
+
+  book ReadingBook @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  user User        @relation(fields: [userId], references: [id])
+
+  @@unique([bookId, userId])
+  @@index([bookId, pagesRead])
+  @@index([bookId, lastReadAt])
+}
+
+model CoupleChallenge {
+  id            String          @id @default(uuid())
+  coupleId      String
+  creatorId     String
+  bookId        String?
+  type          ChallengeType
+  status        ChallengeStatus @default(DRAFT)
+  title         String
+  description   String?
+  targetValue   Int?
+  startsAt      DateTime?
+  endsAt        DateTime?
+  winnerUserId  String?
+  rules         Json?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  couple       Couple              @relation(fields: [coupleId], references: [id], onDelete: Cascade)
+  creator      User                @relation("ChallengeCreator", fields: [creatorId], references: [id])
+  winner       User?               @relation("ChallengeWinner", fields: [winnerUserId], references: [id], onDelete: SetNull)
+  book         ReadingBook?        @relation(fields: [bookId], references: [id], onDelete: SetNull)
+  participants ChallengeParticipant[]
+
+  @@index([coupleId, status])
+  @@index([coupleId, startsAt, endsAt])
+  @@index([endsAt, status])
+  @@index([creatorId, createdAt])
+}
+
+model ChallengeParticipant {
+  id          String   @id @default(uuid())
+  challengeId String
+  userId      String
+  score       Int      @default(0)
+  progress    Decimal  @default(0) @db.Decimal(7,2)
+  joinedAt    DateTime @default(now())
+  completedAt DateTime?
+
+  challenge CoupleChallenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([challengeId, userId])
+  @@index([challengeId, score])
+}
+
+model DateEvent {
+  id          String   @id @default(uuid())
+  coupleId    String
+  creatorId   String
+  title       String
+  description String?
+  startsAt    DateTime
+  endsAt      DateTime?
+  location    String?
+  reminderAt  DateTime?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  couple  Couple @relation(fields: [coupleId], references: [id], onDelete: Cascade)
+  creator User   @relation("DateCreator", fields: [creatorId], references: [id])
+
+  @@index([coupleId, startsAt])
+  @@index([reminderAt])
+}
+
+model ActivityEvent {
+  id        String       @id @default(uuid())
+  coupleId String
+  actorId  String?
+  type     ActivityType
+  entityId String?
+  payload  Json?
+  createdAt DateTime     @default(now())
+
+  couple Couple @relation(fields: [coupleId], references: [id], onDelete: Cascade)
+  actor  User?   @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([coupleId, createdAt])
+  @@index([actorId, createdAt])
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  coupleId  String?
+  actorId   String?
+  action    String
+  entity    String
+  entityId  String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  couple Couple? @relation(fields: [coupleId], references: [id], onDelete: SetNull)
+  actor  User?   @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([coupleId, createdAt])
+  @@index([actorId, createdAt])
+  @@index([entity, entityId])
+}
+
+model GameSession {
+  id            String            @id @default(uuid())
+  code          String            @unique
+  coupleId      String
+  creatorId     String
+  type          GameType
+  status        GameSessionStatus @default(WAITING)
+
+  size          Int?
+  bombCount     Int?
+  reward        String?
+  turnLimitSec  Int               @default(30)
+  totalLimitSec Int               @default(600)
+  config        Json?
+
+  pausedAt          DateTime?
+  pausedByUserId    String?
+  pausedFromStatus  GameSessionStatus?
+  reconnectDeadline DateTime?
+
+  players       GamePlayer[]
+  moves         GameMove[]
+
+  winnerId      String?
+  startedAt     DateTime?
+  finishedAt    DateTime?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  couple        Couple  @relation(fields: [coupleId], references: [id], onDelete: Cascade)
+  creator       User    @relation("GameCreator", fields: [creatorId], references: [id])
+  winner        User?   @relation("GameWinner", fields: [winnerId], references: [id], onDelete: SetNull)
+
+  @@index([coupleId, status])
+  @@index([code])
+  @@index([status, createdAt])
+  @@index([coupleId, finishedAt])
+  @@index([type, status, createdAt])
+}
+
+model GamePlayer {
+  id          String   @id @default(uuid())
+  sessionId   String
+  userId      String
+  seat        Int
+  bombs       String?
+  hits        Int      @default(0)
+  readyAt     DateTime?
+  joinedAt    DateTime @default(now())
+  symbol      String?
+
+  session     GameSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, userId])
+  @@unique([sessionId, seat])
+  @@index([userId])
+}
+
+model GameMove {
+  id          String   @id @default(uuid())
+  sessionId   String
+  actorId     String
+  targetSeat  Int
+  row         Int
+  col         Int
+  hit         Boolean  @default(false)
+  symbol      String?
+  createdAt   DateTime @default(now())
+
+  session     GameSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  actor       User        @relation(fields: [actorId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId, createdAt])
+  @@index([sessionId, row, col])
+}

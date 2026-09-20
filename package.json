@@ -1,0 +1,19 @@
+{
+  "name": "couples-platform",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@10.15.0",
+  "scripts": {
+    "dev": "pnpm --parallel --filter @couples/api --filter @couples/bot --filter @couples/web --filter @couples/admin dev",
+    "build": "pnpm db:generate && pnpm -r build",
+    "db:generate": "pnpm --filter @couples/database prisma:generate",
+    "db:migrate": "pnpm --filter @couples/database prisma:migrate",
+    "db:studio": "pnpm --filter @couples/database prisma:studio",
+    "test": "pnpm db:generate && pnpm --filter @couples/database build && pnpm -r --if-present test",
+    "lint": "pnpm -r --if-present lint",
+    "typecheck": "pnpm db:generate && pnpm --filter @couples/config build && pnpm --filter @couples/shared build && pnpm --filter @couples/database build && pnpm -r typecheck"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  }
+}
